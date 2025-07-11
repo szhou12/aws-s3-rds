@@ -2,6 +2,16 @@ import streamlit as st
 import os
 import time
 from datetime import datetime, timezone
+import boto3
+
+
+# Configuration
+S3_BUCKET = "your-s3-bucket-name"
+S3_PREFIX = "uploads/"   # Optional, for organizing files in S3
+
+# Initialize S3 client (uses AWS credentials from env or config file)
+s3_client = boto3.client("s3")
+
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
