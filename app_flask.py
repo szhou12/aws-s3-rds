@@ -88,7 +88,28 @@ def upload_file():
         return redirect(url_for('index'))
     
     try:
+        # Get additional form data
+        custom_filename = request.form.get('filename', '').strip()
+        authors = request.form.get('authors', '').strip()
+        language = request.form.get('language', '')
+        
         filename = secure_filename(file.filename)
+        
+        # Store metadata (you'd want to save this to database)
+        metadata = {
+            'id': str(uuid.uuid4()),
+            'source_filename': filename,
+            'filename': custom_filename,
+            'author': authors,
+            'language': language,
+            'date_added': datetime.now(),
+            'size': file.content_length, # problem
+            'status': 0,
+            's3_key': "",
+            "pages": 0,
+        }
+        print(metadata)
+
         s3.upload_fileobj(file, AWS_S3_BUCKET, filename, ExtraArgs={
             'Metadata': {
                 'id': str(uuid.uuid4()),

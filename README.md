@@ -1,4 +1,11 @@
-# Setup
+# AWS S3 File Manager
+
+This project provides two different implementations of an S3 file manager:
+
+1. **Flask Web App** (`app_flask.py`) - Traditional web app with HTML templates
+2. **Streamlit App** (`app_streamlit.py`) - Modern, interactive dashboard
+
+## Setup
 ```bash
 # initialize a project in the working directory
 $ uv init
@@ -11,11 +18,46 @@ $ source .venv/bin/activate
 # automatically activate the virtual environment
 Cmd + Shift + P -> Python: Select Interpreter -> type to find .venv
 
-# add dependencies
-$ uv add streamlit
-$ uv add boto3
+# install all dependencies
+$ uv sync
 
 ```
+
+## Running the Applications
+
+### Flask Version
+```bash
+python app_flask.py
+```
+Then open http://localhost:5000 in your browser.
+
+### Streamlit Version
+```bash
+streamlit run app_streamlit.py
+```
+The app will automatically open in your browser.
+
+## Configuration
+
+Update the `AWS_S3_BUCKET` variable in both `app_flask.py` and `app_streamlit.py` to point to your S3 bucket.
+
+Make sure your AWS credentials are configured either through:
+- AWS CLI (`aws configure`)
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+- IAM roles (if running on EC2)
+
+## Features
+
+Both versions provide:
+- File upload to S3 (PDF, XLS, XLSX)
+- File listing from S3
+- File download from S3
+- File deletion from S3
+
+The Streamlit version additionally offers:
+- Modern, interactive UI
+- Real-time file processing status
+- Better visual feedback and error handling
 
 # Workflow Diagram
 ```
