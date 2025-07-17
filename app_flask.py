@@ -93,30 +93,33 @@ def upload_file():
         authors = request.form.get('authors', '').strip()
         language = request.form.get('language', '')
         
-        filename = secure_filename(file.filename)
+        source_filename = secure_filename(file.filename)
+        file_id = str(uuid.uuid4())
+        file_s3_key = f"{file_id}/{source_filename}"
         
         # Store metadata (you'd want to save this to database)
         metadata = {
-            'id': str(uuid.uuid4()),
-            'source_filename': filename,
+            'id': file_id,
+            'source_filename': source_filename,
             'filename': custom_filename,
             'author': authors,
             'language': language,
             'date_added': datetime.now(),
             'size': file.content_length, # problem
-            'status': 0,
-            's3_key': "",
             "pages": 0,
+            'status': 0, # 0: uploaded not processed, 1: processed
+            's3_key': file_s3_key,
+            
         }
         print(metadata)
 
-        s3.upload_fileobj(file, AWS_S3_BUCKET, filename, ExtraArgs={
+        s3.upload_fileobj(file, AWS_S3_BUCKET, file_s3_key, ExtraArgs={
             'Metadata': {
-                'id': str(uuid.uuid4()),
+                'id': file_id,
             },
             'ContentType': file.content_type
             })
-        flash(f"File {filename} uploaded successfully")
+        flash(f"File {file_s3_key} uploaded successfully")
     
     except Exception as e:
         flash(f"ERROR UPLOADING FILE: {str(e)}")

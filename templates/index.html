@@ -71,16 +71,12 @@
         <button type="submit" class="btn">Upload</button>
     </form>
 
-    <!-- Flash message (populated by Flask) -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="msg">
-                {% for message in messages %}
-                    {{ message }}<br>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+    <!-- Message display (for FastAPI query parameters) -->
+    {% if message %}
+        <div class="msg {% if message_type == 'error' %}error{% endif %}">
+            {{ message }}
+        </div>
+    {% endif %}
 
     <!-- Table of Files -->
     <table id="file-table">
@@ -98,6 +94,14 @@
     </table>
 
 <script>
+    // Extract source filename from S3 key (removes UUID__ prefix)
+    function getSourceFilename(s3Key) {
+        if (s3Key.includes('/')) {
+            return s3Key.split('/', 2)[1]; // Get filename after UUID/
+        }
+        return s3Key; // Fallback for legacy keys
+    }
+
     // Fetch file list and update the table
     function refreshFileList() {
         fetch('/list-files')
@@ -108,13 +112,17 @@
                 if (data.success && data.files.length) {
                     data.files.forEach(file => {
                         const tr = document.createElement('tr');
+                        const sourceFilename = getSourceFilename(file.key);
+                        
+                        // Store S3 key in data attribute, display source filename
+                        tr.setAttribute('data-s3-key', file.key);
                         tr.innerHTML = `
-                            <td>${file.key}</td>
+                            <td title="S3 Key: ${file.key}">${sourceFilename}</td>
                             <td style="text-align:right">${file.size}</td>
                             <td>${file.last_modified.replace('T', ' ').slice(0,19)}</td>
                             <td>
                                 <a class="btn" href="/download/${encodeURIComponent(file.key)}">Download</a>
-                                <a class="btn" href="/delete/${encodeURIComponent(file.key)}" onclick="return confirm('Delete ${file.key}?');">Delete</a>
+                                <a class="btn" href="/delete/${encodeURIComponent(file.key)}" onclick="return confirm('Delete ${sourceFilename}?');">Delete</a>
                             </td>
                         `;
                         tbody.appendChild(tr);
