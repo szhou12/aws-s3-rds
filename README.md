@@ -126,3 +126,9 @@ CREATE TABLE FilePageChunk (
 );
 
 ```
+
+
+```bash
+# access Lightsail MySQL via terminal
+export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH" && source .env && mysql -h $MYSQL_HOST -P 3306 -u $MYSQL_USER -p $MYSQL_DB_NAME
+```
