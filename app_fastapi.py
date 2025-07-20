@@ -1,15 +1,30 @@
 import os
+from dotenv import load_dotenv
 import boto3
 import uuid
 import io
 from datetime import datetime
+from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from werkzeug.utils import secure_filename
-from pydantic import BaseModel
+from pydantic import BaseModel, MySQLDsn
+from sqlmodel import Session
+
+from db import get_db, db_manager
+from models import FileInfo, FileListResponse, Upload
+
+
+load_dotenv()
+
+db_host = os.getenv("MYSQL_HOST")
+db_port = os.getenv("MYSQL_PORT")
+db_user = os.getenv("MYSQL_USER")
+db_password = os.getenv("MYSQL_PASSWORD")
+db_name = os.getenv("MYSQL_DB_NAME")
+
 
 # ====== Configuration ======
 AWS_S3_BUCKET = 'rag-file-storage-bucket'  # <-- Change this!
@@ -17,36 +32,32 @@ ALLOWED_EXTENSIONS = {'pdf', 'xls', 'xlsx'}
 
 s3 = boto3.client('s3')
 
-app = FastAPI(title="S3 File Manager", 
+
+
+# Add lifespan event management: load once before the app starts
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    db_uri = MySQLDsn.build(
+        scheme="mysql+pymysql", # MySQL driver
+        username=db_user,
+        password=db_password,
+        host=db_host,
+        port=3306,
+        path=db_name  # Important: Include '/' before DB name
+    )
+    
+    db_manager.init_db(str(db_uri))
+    yield
+    # Shutdown cleanup if needed
+
+app = FastAPI(lifespan=lifespan, 
+              title="S3 File Manager", 
               description="Upload, download, and manage files with AWS S3")
 
 # Setup templates
 templates = Jinja2Templates(directory="templates")
 
-# ====== Models ======
-class FileInfo(BaseModel):
-    id: str
-    key: str
-    size: float
-    last_modified: str
-
-class FileListResponse(BaseModel):
-    success: bool
-    files: list[FileInfo] = []
-    error: Optional[str] = None
-
-class Metadata(BaseModel):
-    id: str
-    filename: str
-    author: str
-    language: str
-    date_added: datetime
-    size: int # in bytes
-    file_type: str
-    source_filename: str
-    pages: int
-    status: int
-    s3_key: str
 
 # ====== Helper functions ======
 def allowed_file(filename: str) -> bool:
@@ -60,7 +71,6 @@ def calculate_file_size(file: UploadFile) -> int:
     return file_size
 
 # ====== Routes ======
-
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, message: Optional[str] = None, message_type: Optional[str] = None):
     """Render the main page"""
@@ -94,12 +104,21 @@ async def list_files():
     except Exception as e:
         return FileListResponse(success=False, error=str(e))
 
+
+# 1. Request arrives → FastAPI sees Depends(get_db)
+# 2. get_db() called → Gets session from connection pool  
+# 3. yield session → Session passed to route function
+# 4. Route executes → Uses session for database operations
+# 5. Route finishes → Control returns to get_db()
+# 6. finally block → session.close() called
+# 7. Session returned to pool → Ready for next request
 @app.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
     filename: str = Form(""),
     authors: str = Form(""),
-    language: str = Form("")
+    language: str = Form(""),
+    session: Session = Depends(get_db)
 ):
     """Upload a file to S3 with metadata"""
     
@@ -121,7 +140,7 @@ async def upload_file(
         file_type = source_filename.rsplit('.', 1)[-1].lower() if '.' in source_filename else ''
         
         # Store metadata
-        metadata = Metadata(
+        metadata = Upload(
             id=file_id,
             filename=filename.strip(),
             author=authors.strip(),

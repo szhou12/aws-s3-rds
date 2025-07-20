@@ -68,3 +68,5 @@ coverage/
 # Jest
 jest.config.js
 jest.setup.js
+
+__pycache__/
