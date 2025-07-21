@@ -31,7 +31,162 @@
         }
 
         .form-group input[type="file"] {
-            padding: 0.3em;
+            padding: 1.5em;
+            width: 100%;
+            max-width: 500px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form-group input[type="file"]:hover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+
+        .file-upload-area {
+            width: 100%;
+            max-width: 500px;
+            min-height: 120px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-top: 0.5em;
+        }
+
+        .file-upload-area:hover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+            transform: translateY(-2px);
+        }
+
+        .file-upload-area.dragover {
+            border-color: #28a745;
+            background-color: #f0fff0;
+        }
+
+        .upload-content {
+            text-align: center;
+            padding: 1em;
+        }
+
+        .upload-icon {
+            font-size: 2em;
+            margin-bottom: 0.5em;
+        }
+
+        .upload-text {
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .upload-text strong {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .file-info {
+            margin-top: 0.5em;
+            padding: 0.5em;
+            background-color: #e7f3ff;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .status-pending {
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        .status-complete {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .upload-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-message {
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .large-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1em auto;
+        }
+
+        /* Alternative progress bar approach */
+        .progress-container {
+            display: none;
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            margin-top: 1em;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #007bff;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+            animation: progress-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes progress-pulse {
+            0%, 100% { width: 10%; }
+            50% { width: 90%; }
         }
     </style>
 </head>
@@ -43,7 +198,17 @@
         <!-- File Selection -->
         <div class="form-group">
             <label for="file">Select File:</label>
-            <input type="file" name="file" id="file" required>
+            <div class="file-upload-area" onclick="document.getElementById('file').click()">
+                <input type="file" name="file" id="file" required style="display: none;">
+                <div class="upload-content">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">
+                        <strong>Click to select a file</strong><br>
+                        <span>or drag and drop here</span>
+                    </div>
+                    <div class="file-info" id="file-info" style="display: none;"></div>
+                </div>
+            </div>
         </div>
         
         <!-- Custom Filename -->
@@ -68,8 +233,20 @@
             </select>
         </div>
         
-        <button type="submit" class="btn">Upload</button>
+        <button type="submit" class="btn" id="upload-btn">
+            <span id="btn-text">Upload</span>
+            <span class="loading-spinner" id="loading-spinner"></span>
+        </button>
     </form>
+
+    <!-- Add this after your form, before the table -->
+    <div class="upload-overlay" id="upload-overlay">
+        <div class="upload-message">
+            <div class="large-spinner"></div>
+            <h3>Uploading File...</h3>
+            <p>Please wait while your file is being processed.</p>
+        </div>
+    </div>
 
     <!-- Message display (for FastAPI query parameters) -->
     {% if message %}
@@ -82,9 +259,14 @@
     <table id="file-table">
         <thead>
             <tr>
-                <th>Filename</th>
+                <th>Source File Name</th>
+                <th>File Name</th>
+                <th>Author</th>
+                <th>Language</th>
+                <th>File Type</th>
                 <th>Size (KB)</th>
-                <th>Last Modified</th>
+                <th>Date Added</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -112,24 +294,32 @@
                 if (data.success && data.files.length) {
                     data.files.forEach(file => {
                         const tr = document.createElement('tr');
-                        const sourceFilename = getSourceFilename(file.key);
+
+                        // Status display
+                        const statusText = file.status === 0 ? 'Processing' : 'Processed';
+                        const statusClass = file.status === 0 ? 'status-pending' : 'status-complete';
                         
                         // Store S3 key in data attribute, display source filename
                         tr.setAttribute('data-s3-key', file.key);
                         tr.innerHTML = `
-                            <td title="S3 Key: ${file.key}">${sourceFilename}</td>
+                            <td title="S3 Key: ${file.key}">${file.sourcename || 'N/A'}</td>
+                            <td>${file.filename}</td>
+                            <td>${file.author}</td>
+                            <td>${file.language.toUpperCase()}</td>
+                            <td>${file.file_type.toUpperCase()}</td>
                             <td style="text-align:right">${file.size}</td>
-                            <td>${file.last_modified.replace('T', ' ').slice(0,19)}</td>
+                            <td>${file.date_added.replace('T', ' ').slice(0,19)}</td>
+                            <td><span class="${statusClass}">${statusText}</span></td>
                             <td>
                                 <a class="btn" href="/download/${encodeURIComponent(file.key)}">Download</a>
-                                <a class="btn" href="/delete/${encodeURIComponent(file.key)}" onclick="return confirm('Delete ${sourceFilename}?');">Delete</a>
+                                <a class="btn" href="/delete/${encodeURIComponent(file.key)}" onclick="return confirm('Delete ${file.sourcename}?');">Delete</a>
                             </td>
                         `;
                         tbody.appendChild(tr);
                     });
                 } else {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="4" style="text-align:center;">No files found.</td>`;
+                    tr.innerHTML = `<td colspan="9" style="text-align:center;">No files found.</td>`;
                     tbody.appendChild(tr);
                 }
             });
@@ -138,10 +328,86 @@
     // Refresh list on page load
     refreshFileList();
 
-    // Refresh list after upload (using form submit, reloads page)
-    document.getElementById('upload-form').addEventListener('submit', function(e){
-        setTimeout(refreshFileList, 1000); // After upload, give backend a moment to finish, then refresh
+    // Enhanced form submission with better UX
+    document.getElementById('upload-form').addEventListener('submit', function(e) {
+        const uploadBtn = document.getElementById('upload-btn');
+        const btnText = document.getElementById('btn-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const uploadOverlay = document.getElementById('upload-overlay');
+        
+        // Validate file is selected
+        const fileInput = document.getElementById('file');
+        if (!fileInput.files.length) {
+            alert('Please select a file first!');
+            e.preventDefault();
+            return;
+        }
+        
+        // Show loading state
+        uploadBtn.disabled = true;
+        btnText.textContent = 'Uploading...';
+        loadingSpinner.style.display = 'inline-block';
+        uploadOverlay.style.display = 'flex';
+        
+        // Form submits normally and redirects
     });
+
+    // File upload enhancement
+    const fileUploadArea = document.querySelector('.file-upload-area');
+    const fileInput = document.getElementById('file');
+    const fileInfo = document.getElementById('file-info');
+
+    // Show selected file info
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileInfo.innerHTML = `
+                <strong>Selected:</strong> ${file.name}<br>
+                <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+                <strong>Type:</strong> ${file.type}
+            `;
+            fileInfo.style.display = 'block';
+        }
+    });
+
+    // Drag and drop functionality
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        fileUploadArea.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        fileUploadArea.classList.remove('dragover');
+    }
+
+    // Handle dropped files
+    fileUploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    }
 </script>
 </body>
 </html>
