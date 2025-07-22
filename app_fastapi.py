@@ -169,7 +169,7 @@ async def upload_file(
             # PHASE 2: Upload to S3
             s3.upload_fileobj(
                 file.file, 
-                AWS_S3_BUCKET, 
+                bucket_name, 
                 file_s3_key, 
                 ExtraArgs={
                     'Metadata': {
@@ -203,7 +203,7 @@ async def download_file(s3_key: str):
     """Download a file from S3"""
     try:
         # Get file from S3
-        response = s3.get_object(Bucket=AWS_S3_BUCKET, Key=s3_key)
+        response = s3.get_object(Bucket=bucket_name, Key=s3_key)
         file_content = response['Body'].read()
         
         # Get original filename from s3_key
@@ -234,7 +234,7 @@ async def delete_file(s3_key: str, session: Session = Depends(get_db)):
             session.flush()
         
         # Phase 2: Delete file from s3
-        s3.delete_object(Bucket=AWS_S3_BUCKET, Key=s3_key)
+        s3.delete_object(Bucket=bucket_name, Key=s3_key)
 
         # commit Mysql changes after s3 deletion success
         if upload_record:
