@@ -19,17 +19,22 @@ from models import FileInfo, FileListResponse, Upload
 
 load_dotenv()
 
-db_host = os.getenv("MYSQL_HOST")
-db_port = os.getenv("MYSQL_PORT")
-db_user = os.getenv("MYSQL_USER")
-db_password = os.getenv("MYSQL_PASSWORD")
-db_name = os.getenv("MYSQL_DB_NAME")
-
+db_host = os.getenv("RMI_MYSQL_HOST")
+db_port = os.getenv("RMI_MYSQL_PORT")
+db_user = os.getenv("RMI_MYSQL_USER")
+db_password = os.getenv("RMI_MYSQL_PASSWORD")
+db_name = os.getenv("RMI_MYSQL_DB_NAME")
+bucket_name = os.getenv("RMI_S3_BUCKET_NAME")
 
 # ====== Configuration ======
-AWS_S3_BUCKET = 'rag-file-storage-bucket'  # <-- Change this!
 ALLOWED_EXTENSIONS = {'pdf', 'xls', 'xlsx'}
 
+# boto3 will automatically look for Access Key and Secret in the following places:
+# 1. Environment variables
+# 2. AWS credentials file: ~/.aws/credentials
+# 3. AWS config file: ~/.aws/config
+# 4. IAM Role (if running on EC2/ECS with attached IAM role)
+# 5. Other sources (like container service variables, etc.)
 s3 = boto3.client('s3')
 
 
@@ -79,30 +84,6 @@ async def index(request: Request, message: Optional[str] = None, message_type: O
         "message": message,
         "message_type": message_type
     })
-
-# @app.get("/list-files", response_model=FileListResponse)
-# async def list_files():
-#     """List all files in the S3 bucket"""
-#     try:
-#         response = s3.list_objects_v2(Bucket=AWS_S3_BUCKET)
-#         files = []
-
-#         if 'Contents' in response:
-#             for item in response['Contents']:
-#                 # Extract ID from S3 key (format: "uuid/filename")
-#                 s3_key = item['Key']
-#                 file_id = s3_key.split('/')[0] if '/' in s3_key else 'unknown'
-                
-#                 files.append(FileInfo(
-#                     id=file_id,
-#                     key=s3_key,
-#                     size=round(item['Size'] / 1024, 2),
-#                     last_modified=item['LastModified'].isoformat()
-#                 ))
-        
-#         return FileListResponse(success=True, files=files)
-#     except Exception as e:
-#         return FileListResponse(success=False, error=str(e))
 
 @app.get("/list-files", response_model=FileListResponse)
 async def list_files(session: Session = Depends(get_db)):
