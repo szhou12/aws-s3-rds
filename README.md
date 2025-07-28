@@ -19,7 +19,9 @@ $ source .venv/bin/activate
 Cmd + Shift + P -> Python: Select Interpreter -> type to find .venv
 
 # install all dependencies
+$ uv add <dependency>
 $ uv sync
+
 
 ```
 
@@ -134,3 +136,9 @@ export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH" && source .env && mysql -
 
 export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH" && source .env && mysql -h $RMI_MYSQL_HOST -P 3306 -u $RMI_MYSQL_USER -p $RMI_MYSQL_DB_NAME
 ```
+
+# Solution to `uv` Virtual Env Corruption
+If ever `.venv/` is corrupted, and you no longer can activate the environment or use command like `uv run <file>`, you can try the following:
+1. Delete `.venv`: `rm -rf .venv`
+2. Reinstall the environment if you have a `pyproject.toml`: `uv venv`
+3. Activate the new environment: `source .venv/bin/activate`
