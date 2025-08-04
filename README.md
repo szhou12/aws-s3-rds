@@ -135,6 +135,23 @@ CREATE TABLE FilePageChunk (
 
 ```
 
+## Example
+```
+Upload
+-------
+id: 8cb1b1f7-aa03-49b9-aea7-ff452f018b2b
+filename: Global Hydrogen Review 2024
+author: IEA
+language: en
+date_added: 2025-07-23 03:34:19
+size: 10904359
+file_type: pdf
+source_filename: GlobalHydrogenReview2024.pdf
+pages: 0
+status: 0
+s3_key: 8cb1b1f7-aa03-49b9-aea7-ff452f018b2b/GlobalHydrogenReview2024.pdf
+```
+
 
 ```bash
 # access Lightsail MySQL via terminal
