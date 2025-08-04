@@ -4,6 +4,7 @@ This project provides two different implementations of an S3 file manager:
 
 1. **Flask Web App** (`app_flask.py`) - Traditional web app with HTML templates
 2. **Streamlit App** (`app_streamlit.py`) - Modern, interactive dashboard
+3. **FASTAPI** (`app_fastapi.py`)
 
 ## Setup
 ```bash
@@ -26,6 +27,11 @@ $ uv sync
 ```
 
 ## Running the Applications
+
+### FastAPI Version
+```bash
+uv run app_fastapi.py
+```
 
 ### Flask Version
 ```bash
