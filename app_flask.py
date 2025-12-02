@@ -1,7 +1,7 @@
 import os
 import boto3
 from flask import Flask, render_template_string, request, jsonify, flash, render_template, redirect, url_for, send_file
-from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename # will remove Chinese chars from the filename
 from datetime import datetime
 import io
 import uuid
@@ -93,7 +93,12 @@ def upload_file():
         authors = request.form.get('authors', '').strip()
         language = request.form.get('language', '')
         
-        source_filename = secure_filename(file.filename)
+        # source_filename = secure_filename(file.filename) # strips Chinese
+        source_filename = os.path.basename(file.filename) # keeps Chinese, strips paths
+        if not source_filename:
+            flash('Invalid filename')
+            return redirect(url_for('index'))
+
         file_id = str(uuid.uuid4())
         file_s3_key = f"{file_id}/{source_filename}"
         
