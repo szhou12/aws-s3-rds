@@ -5,12 +5,16 @@
     <title>S3 File Manager</title>
     <style>
         body { font-family: sans-serif; margin: 2em; }
-        table { border-collapse: collapse; width: 70%; margin-top: 2em; }
+        table { border-collapse: collapse; width: 100%; min-width: 900px; margin-top: 2em; }
         th, td { border: 1px solid #ccc; padding: 0.6em 1em; }
         th { background: #f0f0f0; }
         .msg { padding: 0.5em 1em; margin-bottom: 1em; background: #e0ffe0; color: #008000; border: 1px solid #b2ffb2;}
         .error { background: #ffe0e0; color: #b20000; border: 1px solid #ffb2b2;}
         .btn { padding: 0.2em 0.8em; }
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
         .form-group {
             margin-bottom: 1em;
         }
@@ -232,6 +236,12 @@
                 <option value="zh">中文</option>
             </select>
         </div>
+
+        <!-- Version Date -->
+        <div class="form-group">
+            <label for="publication_date">Publication Date:</label>
+            <input type="date" name="publication_date" id="publication_date" required>
+        </div>
         
         <button type="submit" class="btn" id="upload-btn">
             <span id="btn-text">Upload</span>
@@ -256,24 +266,27 @@
     {% endif %}
 
     <!-- Table of Files -->
-    <table id="file-table">
-        <thead>
-            <tr>
-                <th>Source File Name</th>
-                <th>File Name</th>
-                <th>Author</th>
-                <th>Language</th>
-                <th>File Type</th>
-                <th>Size (KB)</th>
-                <th>Date Added</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Rows populated by JS -->
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table id="file-table">
+            <thead>
+                <tr>
+                    <th>Source File Name</th>
+                    <th>File Name</th>
+                    <th>Author</th>
+                    <th>Language</th>
+                    <th>File Type</th>
+                    <th>Size (KB)</th>
+                    <th>Date Added</th>
+                    <th>Publication Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows populated by JS -->
+            </tbody>
+        </table>
+    </div>
 
 <script>
     // Extract source filename from S3 key (removes UUID__ prefix)
@@ -298,6 +311,7 @@
                         // Status display
                         const statusText = file.status === 0 ? 'Processing' : 'Processed';
                         const statusClass = file.status === 0 ? 'status-pending' : 'status-complete';
+                        const displayVersionDate = formatDate(file.publication_date);
                         
                         // Store S3 key in data attribute, display source filename
                         tr.setAttribute('data-s3-key', file.key);
@@ -308,7 +322,8 @@
                             <td>${file.language.toUpperCase()}</td>
                             <td>${file.file_type.toUpperCase()}</td>
                             <td style="text-align:right">${file.size}</td>
-                            <td>${file.date_added.replace('T', ' ').slice(0,19)}</td>
+                            <td>${formatDate(file.date_added)}</td>
+                            <td>${displayVersionDate}</td>
                             <td><span class="${statusClass}">${statusText}</span></td>
                             <td>
                                 <a class="btn" href="/download/${encodeURIComponent(file.key)}">Download</a>
@@ -319,10 +334,19 @@
                     });
                 } else {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="9" style="text-align:center;">No files found.</td>`;
+                    tr.innerHTML = `<td colspan="10" style="text-align:center;">No files found.</td>`;
                     tbody.appendChild(tr);
                 }
             });
+    }
+
+    function formatDate(value) {
+        if (!value) return '—';
+        try {
+            return value.replace('T', ' ').slice(0, 19);
+        } catch {
+            return value;
+        }
     }
 
     // Refresh list on page load

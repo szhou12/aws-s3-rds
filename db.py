@@ -7,20 +7,21 @@ from pydantic import MySQLDsn
 
 load_dotenv()
 
-db_host = os.getenv("MYSQL_HOST")
-db_port = os.getenv("MYSQL_PORT")
-db_user = os.getenv("MYSQL_USER")
-db_password = os.getenv("MYSQL_PASSWORD")
-db_name = os.getenv("MYSQL_DB_NAME")
+## NOT USED!!!
+# db_host = os.getenv("MYSQL_HOST")
+# db_port = os.getenv("MYSQL_PORT")
+# db_user = os.getenv("MYSQL_USER")
+# db_password = os.getenv("MYSQL_PASSWORD")
+# db_name = os.getenv("MYSQL_DB_NAME")
 
-db_uri = MySQLDsn.build(
-    scheme="mysql+pymysql", # MySQL driver
-    username=db_user,
-    password=db_password,
-    host=db_host,
-    port=3306,
-    path=db_name  # Important: Include '/' before DB name
-)
+# db_uri = MySQLDsn.build(
+#     scheme="mysql+pymysql", # MySQL driver
+#     username=db_user,
+#     password=db_password,
+#     host=db_host,
+#     port=3306,
+#     path=db_name  # Important: Include '/' before DB name
+# )
 
 class DatabaseManager:
     def __init__(self):

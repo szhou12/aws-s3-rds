@@ -165,3 +165,20 @@ If ever `.venv/` is corrupted, and you no longer can activate the environment or
 1. Delete `.venv`: `rm -rf .venv`
 2. Reinstall the environment if you have a `pyproject.toml`: `uv venv`
 3. Activate the new environment: `source .venv/bin/activate`
+
+# Connect to Lightsail Instance & Update Code
+1. SSH into the instance
+2. `cd aws-s3-rds && git pull`
+3. Rebuild the Docker image: `cd ~/aws-s3-rds` then, `docker build -t aws-s3-rds:latest`
+4. Restart the Docker container: 
+    1. find the current one: `docker ps`
+    2. stop/remove it `docker stop <cid> && docker rm <cid>`
+    3. run the new image `docker run -d --name aws-s3-rds -p 8000:8000 --env-file .env aws-s3-rds:latest`
+5. Verify: `docker ps`
+
+# EXPLANATIOM
+## This mini-app accesses 3 AWS services:
+1. S3 Bucket: to store actual uploaded files
+2. Lightsail Instance (`Ubuntu-*`): host and run this mini uploading app
+3. Lightsail Databases (`Database-1`): to store actual metadata of each uploaded file
+    - Connection params in `.env`: `RMI_MYSQL_*`

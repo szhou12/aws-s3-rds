@@ -1,4 +1,5 @@
 import os
+import unicodedata
 from dotenv import load_dotenv
 import boto3
 import uuid
@@ -40,6 +41,7 @@ s3 = boto3.client('s3')
 
 
 # Add lifespan event management: load once before the app starts
+# use connection params from RMI_MYSQL_*
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -101,6 +103,7 @@ async def list_files(session: Session = Depends(get_db)):
                 sourcename=upload.source_filename,
                 filename=upload.filename,
                 author=upload.author,
+                publication_date=upload.publication_date.isoformat(),
                 language=upload.language,
                 file_type=upload.file_type,
                 status=upload.status
@@ -118,12 +121,15 @@ async def list_files(session: Session = Depends(get_db)):
 # 5. Route finishes → Control returns to get_db()
 # 6. finally block → session.close() called
 # 7. Session returned to pool → Ready for next request
+# Form(): it means the incoming fields need to be form-data aka. Content-Type: multipart/form-data
+# MUST use form-data if you send files from frontend (json can't do)
 @app.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
     filename: str = Form(""),
     authors: str = Form(""),
     language: str = Form(""),
+    publication_date: Optional[datetime] = Form(None),
     session: Session = Depends(get_db)
 ):
     """Upload a file to S3 with metadata"""
@@ -140,7 +146,11 @@ async def upload_file(
         file_size = calculate_file_size(file)
         
         # Prepare file information
-        source_filename = secure_filename(file.filename)
+        # source_filename = secure_filename(file.filename) # strips Chinese
+        source_filename = os.path.basename(file.filename) # keeps Chinese, strips paths
+        # same Chinese char may have different underlying unicode
+        source_filename = unicodedata.normalize("NFC", source_filename)
+
         file_id = str(uuid.uuid4())
         file_s3_key = f"{file_id}/{source_filename}"
         file_type = source_filename.rsplit('.', 1)[-1].lower() if '.' in source_filename else ''
@@ -151,6 +161,7 @@ async def upload_file(
             filename=filename.strip(),
             author=authors.strip(),
             language=language,
+            publication_date=publication_date,
             size=file_size,
             file_type=file_type,
             source_filename=source_filename,
