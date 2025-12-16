@@ -14,7 +14,7 @@ class FileInfo(BaseModel):
     sourcename: str
     filename: str
     author: str
-    publication_date: datetime
+    publication_date: Optional[datetime]
     language: str
     file_type: str
     status: int
