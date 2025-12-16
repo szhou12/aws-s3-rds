@@ -169,9 +169,9 @@ If ever `.venv/` is corrupted, and you no longer can activate the environment or
 # Connect to Lightsail Instance & Update Code
 1. SSH into the instance
 2. `cd aws-s3-rds && git pull`
-3. Rebuild the Docker image: `cd ~/aws-s3-rds` then, `docker build -t aws-s3-rds:latest`
+3. Rebuild the Docker image: `cd ~/aws-s3-rds` then, `sudo docker build -t aws-s3-rds:latest .`
 4. Restart the Docker container: 
-    1. find the current one: `docker ps`
+    1. find the current one: `sudo docker ps`
     2. stop/remove it `docker stop <cid> && docker rm <cid>`
     3. run the new image `docker run -d --name aws-s3-rds -p 8000:8000 --env-file .env aws-s3-rds:latest`
 5. Verify: `docker ps`
