@@ -18,13 +18,14 @@ class FileInfo(BaseModel):
     language: str
     file_type: str
     status: int
+    legacy_id: str | None = None
 
 class FileListResponse(BaseModel):
     success: bool
     files: list[FileInfo] = []
     error: Optional[str] = None
 
-
+# format saved in metadata table
 class Upload(SQLModel, table=True):
     id: str = Field(primary_key=True)
     filename: str
@@ -38,3 +39,4 @@ class Upload(SQLModel, table=True):
     pages: int
     status: int
     s3_key: str
+    legacy_id: str | None = Field(default=None, max_length=255)

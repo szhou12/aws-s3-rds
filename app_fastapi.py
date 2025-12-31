@@ -151,7 +151,7 @@ async def upload_file(
         # same Chinese char may have different underlying unicode
         source_filename = unicodedata.normalize("NFC", source_filename)
 
-        file_id = str(uuid.uuid4())
+        file_id = str(uuid.uuid4().hex)
         file_s3_key = f"{file_id}/{source_filename}"
         file_type = source_filename.rsplit('.', 1)[-1].lower() if '.' in source_filename else ''
         
